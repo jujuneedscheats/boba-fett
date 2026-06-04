@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Wars Battle Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(135deg, #000 0%, #1a1a2e 50%, #16213e 100%);
+            color: #00ff00;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #00ff00;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 0 0 10px #00ff00;
+            color: #ffd700;
+        }
+
+        .battle-arena {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .player-section, .enemy-section {
+            background: rgba(20, 20, 40, 0.8);
+            border: 2px solid #00ff00;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .character {
+            font-size: 3em;
+            margin: 20px 0;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .character-name {
+            font-size: 1.5em;
+            margin: 10px 0;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .health-bar {
+            background: #333;
+            border: 2px solid #00ff00;
+            height: 30px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00aa00);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-weight: bold;
+        }
+
+        .stats {
+            font-size: 0.9em;
+            margin: 10px 0;
+            color: #00ff00;
+        }
+
+        .status-message {
+            margin: 15px 0;
+            min-height: 40px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            color: #00ff00;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 15px 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00ff00, #00aa00);
+            color: #000;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #00ff00, #00ff00);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        button:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .game-log {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            min-height: 100px;
+        }
+
+        .log-entry {
+            color: #00ff00;
+            margin: 5px 0;
+            font-size: 0.9em;
+            border-bottom: 1px dotted #00ff00;
+            padding-bottom: 5px;
+        }
+
+        .log-entry.player {
+            color: #ffd700;
+        }
+
+        .log-entry.enemy {
+            color: #ff6b6b;
+        }
+
+        .log-entry.critical {
+            color: #ff00ff;
+            font-weight: bold;
+        }
+
+        .game-over {
+            text-align: center;
+            font-size: 2em;
+            padding: 20px;
+            border: 3px solid #ffd700;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .game-over.show {
+            display: block;
+            animation: blink 0.5s infinite;
+        }
+
+        .game-over.victory {
+            color: #00ff00;
+            border-color: #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+        }
+
+        .game-over.defeat {
+            color: #ff6b6b;
+            border-color: #ff6b6b;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.5; }
+        }
+
+        .reset-btn {
+            margin-top: 20px;
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #000;
+        }
+
+        .enemy-selector {
+            background: rgba(20, 20, 40, 0.8);
+            border: 2px solid #00ff00;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .enemy-selector h2 {
+            color: #ffd700;
+            margin-bottom: 15px;
+        }
+
+        .enemy-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .enemy-btn {
+            padding: 15px 20px;
+            font-size: 1em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .enemy-btn:hover {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.8);
+            transform: scale(1.05);
+        }
+
+        .enemy-btn:active {
+            transform: scale(0.98);
+        }
+
+        .game-section {
+            display: none;
+        }
+
+        .game-section.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .battle-arena {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .character {
+                font-size: 2em;
+            }
+
+            .enemy-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚔️ STAR WARS BATTLE ARENA ⚔️</h1>
+
+        <!-- Enemy Selection Screen -->
+        <div class="enemy-selector" id="enemySelector">
+            <h2>Choose Your Opponent</h2>
+            <p style="color: #00ff00; margin-bottom: 20px;">Select a Star Wars villain to battle against!</p>
+            <div class="enemy-buttons">
+                <button class="enemy-btn" onclick="selectEnemy(0)">🪖 Stormtrooper</button>
+                <button class="enemy-btn" onclick="selectEnemy(1)">🤠 Han Solo</button>
+                <button class="enemy-btn" onclick="selectEnemy(2)">🎯 Boba Fett</button>
+                <button class="enemy-btn" onclick="selectEnemy(3)">🖤 Darth Vader</button>
+            </div>
+        </div>
+
+        <!-- Game Section -->
+        <div class="game-section" id="gameSection">
+            <div class="game-over" id="gameOverScreen"></div>
+
+            <div class="battle-arena">
+                <!-- Player Section -->
+                <div class="player-section">
+                    <div class="character-name">YOU</div>
+                    <div class="character" id="playerCharacter">👨‍🚀</div>
+                    <div class="stats">Player</div>
+                    <div class="health-bar">
+                        <div class="health-fill" id="playerHealth" style="width: 100%">
+                            <span id="playerHealthText">100/100</span>
+                        </div>
+                    </div>
+                    <div class="stats">
+                        Attack Power: <span id="playerAttack">15</span>
+                        <br>
+                        Level: <span id="playerLevel">1</span>
+                    </div>
+                    <div class="status-message" id="playerStatus">Ready for battle!</div>
+                </div>
+
+                <!-- Enemy Section -->
+                <div class="enemy-section">
+                    <div class="character-name" id="enemyName">STORMTROOPER</div>
+                    <div class="character" id="enemyCharacter">🪖</div>
+                    <div class="stats">Computer Enemy</div>
+                    <div class="health-bar">
+                        <div class="health-fill" id="enemyHealth" style="width: 100%">
+                            <span id="enemyHealthText">80/80</span>
+                        </div>
+                    </div>
+                    <div class="stats">
+                        Attack Power: <span id="enemyAttack">12</span>
+                        <br>
+                        Level: <span id="enemyLevel">1</span>
+                    </div>
+                    <div class="status-message" id="enemyStatus">Preparing to attack!</div>
+                </div>
+            </div>
+
+            <!-- Game Log -->
+            <div class="game-log" id="gameLog">
+                <div class="log-entry">Game started! Face off against your enemy!</div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls" id="controls">
+                <button onclick="playerAttack()">🔫 ATTACK</button>
+                <button onclick="playerDefend()">🛡️ DEFEND</button>
+                <button onclick="playerSpecial()">⚡ SPECIAL</button>
+                <button onclick="playerHeal()">💊 HEAL</button>
+            </div>
+
+            <button class="reset-btn" onclick="resetGame()">🔄 NEW GAME</button>
+        </div>
+    </div>
+
+    <script>
+        // Star Wars Battle Game
+        const ENEMIES = [
+            {
+                name: 'STORMTROOPER',
+                emoji: '🪖',
+                maxHealth: 80,
+                attack: 12,
+                special: 'Rapid Fire',
+                description: 'An Imperial stormtrooper ready for battle!'
+            },
+            {
+                name: 'HAN SOLO',
+                emoji: '🤠',
+                maxHealth: 100,
+                attack: 18,
+                special: 'Quick Draw',
+                description: 'The smuggler from the Millennium Falcon!'
+            },
+            {
+                name: 'BOBA FETT',
+                emoji: '🎯',
+                maxHealth: 120,
+                attack: 22,
+                special: 'Thermal Detonator',
+                description: 'The legendary bounty hunter!'
+            },
+            {
+                name: 'DARTH VADER',
+                emoji: '🖤',
+                maxHealth: 150,
+                attack: 28,
+                special: 'Force Choke',
+                description: 'The Dark Lord himself!'
+            }
+        ];
+
+        let currentEnemy = 0;
+        let gameState = {
+            player: {
+                health: 100,
+                maxHealth: 100,
+                attack: 15,
+                defense: 0,
+                level: 1,
+                specialty: null,
+                lastAction: null
+            },
+            enemy: {
+                health: 80,
+                maxHealth: 80,
+                attack: 12,
+                defense: 0,
+                level: 1,
+                specialty: null,
+                lastAction: null
+            },
+            gameActive: true,
+            turn: 'player',
+            battleLog: []
+        };
+
+        function selectEnemy(index) {
+            currentEnemy = index;
+            document.getElementById('enemySelector').style.display = 'none';
+            document.getElementById('gameSection').classList.add('active');
+            initializeGame();
+        }
+
+        function initializeGame() {
+            gameState = {
+                player: {
+                    health: 100,
+                    maxHealth: 100,
+                    attack: 15,
+                    defense: 0,
+                    level: 1,
+                    specialty: null,
+                    lastAction: null
+                },
+                enemy: { ...ENEMIES[currentEnemy] },
+                gameActive: true,
+                turn: 'player',
+                battleLog: []
+            };
+            gameState.enemy.health = gameState.enemy.maxHealth;
+
+            updateDisplay();
+            document.getElementById('gameOverScreen').classList.remove('show');
+            document.getElementById('controls').style.display = 'grid';
+            addBattleLog(`⚔️ Battle started against ${gameState.enemy.name}!`, 'critical');
+        }
+
+        function updateDisplay() {
+            // Update player display
+            document.getElementById('playerHealth').style.width = 
+                (gameState.player.health / gameState.player.maxHealth) * 100 + '%';
+            document.getElementById('playerHealthText').textContent = 
+                `${gameState.player.health}/${gameState.player.maxHealth}`;
+            document.getElementById('playerAttack').textContent = gameState.player.attack;
+            document.getElementById('playerLevel').textContent = gameState.player.level;
+
+            // Update enemy display
+            document.getElementById('enemyName').textContent = gameState.enemy.name;
+            document.getElementById('enemyCharacter').textContent = gameState.enemy.emoji;
+            document.getElementById('enemyHealth').style.width = 
+                (gameState.enemy.health / gameState.enemy.maxHealth) * 100 + '%';
+            document.getElementById('enemyHealthText').textContent = 
+                `${gameState.enemy.health}/${gameState.enemy.maxHealth}`;
+            document.getElementById('enemyAttack').textContent = gameState.enemy.attack;
+            document.getElementById('enemyLevel').textContent = gameState.enemy.level;
+
+            // Update status messages
+            if (gameState.player.lastAction) {
+                document.getElementById('playerStatus').textContent = gameState.player.lastAction;
+            }
+            if (gameState.enemy.lastAction) {
+                document.getElementById('enemyStatus').textContent = gameState.enemy.lastAction;
+            }
+
+            updateBattleLog();
+        }
+
+        function addBattleLog(message, type = 'normal') {
+            gameState.battleLog.push({ message, type });
+            // Keep last 10 messages
+            if (gameState.battleLog.length > 10) {
+                gameState.battleLog.shift();
+            }
+        }
+
+        function updateBattleLog() {
+            const logDiv = document.getElementById('gameLog');
+            logDiv.innerHTML = '';
+            gameState.battleLog.forEach(entry => {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `log-entry ${entry.type}`;
+                msgDiv.textContent = entry.message;
+                logDiv.appendChild(msgDiv);
+            });
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function calculateDamage(attacker, defender, multiplier = 1) {
+            const baseDamage = attacker.attack * multiplier;
+            const variance = Math.random() * 10 - 5; // -5 to +5
+            const defenseMitigation = defender.defense * 0.5;
+            return Math.max(1, Math.floor(baseDamage + variance - defenseMitigation));
+        }
+
+        function playerAttack() {
+            if (!gameState.gameActive || gameState.turn !== 'player') return;
+
+            const damage = calculateDamage(gameState.player, gameState.enemy);
+            gameState.enemy.health -= damage;
+            gameState.player.lastAction = `⚔️ Attacked for ${damage} damage!`;
+            addBattleLog(`You attacked the ${gameState.enemy.name} for ${damage} damage!`, 'player');
+
+            gameState.player.defense = 0;
+            checkGameEnd();
+
+            if (gameState.gameActive) {
+                setTimeout(enemyTurn, 1000);
+            }
+        }
+
+        function playerDefend() {
+            if (!gameState.gameActive || gameState.turn !== 'player') return;
+
+            gameState.player.defense = 10;
+            gameState.player.lastAction = '🛡️ Taking defensive stance!';
+            addBattleLog('You raise your shield and brace for impact!', 'player');
+
+            setTimeout(enemyTurn, 1000);
+        }
+
+        function playerSpecial() {
+            if (!gameState.gameActive || gameState.turn !== 'player') return;
+
+            const damage = calculateDamage(gameState.player, gameState.enemy, 2.5);
+            gameState.enemy.health -= damage;
+            gameState.player.lastAction = `⚡ CRITICAL HIT for ${damage} damage!`;
+            addBattleLog(`⚡ SPECIAL ATTACK! You hit the ${gameState.enemy.name} for ${damage} critical damage!`, 'critical');
+
+            gameState.player.defense = 0;
+            checkGameEnd();
+
+            if (gameState.gameActive) {
+                setTimeout(enemyTurn, 1000);
+            }
+        }
+
+        function playerHeal() {
+            if (!gameState.gameActive || gameState.turn !== 'player') return;
+
+            const healAmount = 30;
+            const actualHeal = Math.min(healAmount, gameState.player.maxHealth - gameState.player.health);
+            gameState.player.health += actualHeal;
+            gameState.player.lastAction = `💊 Restored ${actualHeal} health!`;
+            addBattleLog(`You used a healing item and restored ${actualHeal} health!`, 'player');
+
+            gameState.player.defense = 0;
+            setTimeout(enemyTurn, 1000);
+        }
+
+        function enemyTurn() {
+            if (!gameState.gameActive) return;
+
+            const actionChoice = Math.random();
+            let damage = 0;
+
+            if (gameState.enemy.health < gameState.enemy.maxHealth * 0.3 && Math.random() > 0.5) {
+                // Enemy defends when low health
+                gameState.enemy.defense = 8;
+                gameState.enemy.lastAction = `${gameState.enemy.emoji} Defensive stance!`;
+                addBattleLog(`${gameState.enemy.name} takes a defensive stance!`, 'enemy');
+            } else if (actionChoice < 0.6) {
+                // Normal attack
+                damage = calculateDamage(gameState.enemy, gameState.player);
+                gameState.player.health -= damage;
+                gameState.enemy.lastAction = `${gameState.enemy.emoji} Attacks for ${damage}!`;
+                addBattleLog(`${gameState.enemy.name} attacks you for ${damage} damage!`, 'enemy');
+            } else if (actionChoice < 0.85) {
+                // Special attack
+                damage = calculateDamage(gameState.enemy, gameState.player, 2);
+                gameState.player.health -= damage;
+                gameState.enemy.lastAction = `${gameState.enemy.emoji} ${gameState.enemy.special}! ${damage} damage!`;
+                addBattleLog(`${gameState.enemy.name} uses ${gameState.enemy.special} for ${damage} damage!`, 'critical');
+            } else {
+                // Heal
+                const heal = Math.min(20, gameState.enemy.maxHealth - gameState.enemy.health);
+                gameState.enemy.health += heal;
+                gameState.enemy.lastAction = `${gameState.enemy.emoji} Restores ${heal} health!`;
+                addBattleLog(`${gameState.enemy.name} uses a healing item!`, 'enemy');
+            }
+
+            // Reset defense
+            gameState.player.defense = 0;
+            gameState.enemy.defense = 0;
+
+            updateDisplay();
+            checkGameEnd();
+        }
+
+        function checkGameEnd() {
+            updateDisplay();
+
+            if (gameState.player.health <= 0) {
+                endGame(false);
+            } else if (gameState.enemy.health <= 0) {
+                winBattle();
+            }
+        }
+
+        function winBattle() {
+            gameState.player.level++;
+            gameState.player.attack += 5;
+            gameState.player.health = gameState.player.maxHealth;
+
+            addBattleLog(`✨ YOU DEFEATED ${gameState.enemy.name}!`, 'critical');
+
+            if (currentEnemy < ENEMIES.length - 1) {
+                currentEnemy++;
+                setTimeout(() => {
+                    addBattleLog(`Next opponent: ${ENEMIES[currentEnemy].name}!`, 'normal');
+                    gameState.enemy = { ...ENEMIES[currentEnemy] };
+                    gameState.enemy.health = gameState.enemy.maxHealth;
+                    gameState.gameActive = true;
+                    updateDisplay();
+                }, 2000);
+            } else {
+                endGame(true);
+            }
+        }
+
+        function endGame(victory) {
+            gameState.gameActive = false;
+            const screen = document.getElementById('gameOverScreen');
+            const controls = document.getElementById('controls');
+
+            if (victory) {
+                screen.innerHTML = `
+                    <div style="font-size: 1.2em;">
+                        🎉 VICTORY! 🎉<br>
+                        You have defeated all enemies!<br>
+                        Final Level: ${gameState.player.level}<br>
+                        Final Attack: ${gameState.player.attack}
+                    </div>
+                `;
+                screen.classList.add('victory');
+            } else {
+                screen.innerHTML = `
+                    <div style="font-size: 1.2em;">
+                        💀 DEFEATED 💀<br>
+                        You were defeated by ${gameState.enemy.name}!<br>
+                        Reached Level: ${gameState.player.level}<br>
+                        Better luck next time!
+                    </div>
+                `;
+                screen.classList.add('defeat');
+            }
+
+            screen.classList.add('show');
+            controls.style.display = 'none';
+        }
+
+        function resetGame() {
+            document.getElementById('gameOverScreen').classList.remove('victory', 'defeat', 'show');
+            document.getElementById('gameSection').classList.remove('active');
+            document.getElementById('enemySelector').style.display = 'block';
+            currentEnemy = 0;
+        }
+    </script>
+</body>
+</html>
